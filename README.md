@@ -43,6 +43,8 @@ Stage   3: -+----+-
 Stage   4: +------+
 ```
 
+## Other Actions
+
 ### Change Direction
 Turn on SW3 to change the direction of the action performed.
 
