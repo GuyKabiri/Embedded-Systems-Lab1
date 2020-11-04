@@ -6,120 +6,139 @@ void main()
     init();
     while(1)
     {
-        PORTA = 0x0;
-        if (PORTFbits.RF4)
-        {
-            fan();
-        }
-        else if (PORTFbits.RF5)
-        {
-           shift();
-        }
-        else if(PORTFbits.RF3)
-        {
-            counter();
-        }
+        reset_LEDs();
         
-//        make_sound();
+        if (PORTFbits.RF4)          //  if SW0 is ON
+            fan();
+        else if (PORTFbits.RF5)     //  if SW1 is ON
+           shift();
+        else if(PORTFbits.RF3)      //  if SW2 is ON
+            counter();
+        
+        if(PORTBbits.RB9)           //  if SW7 is ON
+            break;                  //  break from the loop and end program
+        
+        make_sound();
     }
+    
+    reset_LEDs();                   //  turn OFF the LEDs
 }
 
 void counter()
 {
-    PORTA = 0x0;
-    while(PORTFbits.RF3 && !PORTFbits.RF5 && !PORTFbits.RF4)
+    //  while SW0 is ON and both SW1 and SW2 are OFF (if SW1 or SW2 is ON -> break from this function)
+    //  if SW7 is ON -> BREAK
+    while(PORTFbits.RF3 && !PORTFbits.RF5 && !PORTFbits.RF4 && !PORTBbits.RB9)
     {
-        if (PORTDbits.RD15)
-            PORTA--;
+        if (PORTDbits.RD15)     //  if SW3 is ON
+            PORTA--;            //  count down
         else
-            PORTA++;
-        delay();
+            PORTA++;            //  otherwise, count up
+        
+        delay();                //  delay between each iteration
+        make_sound();
     }
 }
 
 void shift()
 {
-    PORTA = 0x1;
-    while (PORTFbits.RF5 && !PORTFbits.RF4)
+    //  if SW1 is ON and SW1 is OFF (if SW2 is ON -> break from this function)
+    //  if SW7 is ON -> BREAK
+    while (PORTFbits.RF5 && !PORTFbits.RF4 && !PORTBbits.RB9)
     {
-        delay();
-        if (PORTDbits.RD15)
-            PORTA >>= 1;
-        else
-            PORTA <<= 1;
-        
-       if ((0xff & PORTA) == 0x00)
+        if ((0xff & PORTA) == 0x00) //  if all the LEDs is OFF -> need to initiate them
        {
-           if (PORTDbits.RD15)
-                PORTA = 0x80;           
+           if (PORTDbits.RD15)      //  if SW3 is turned ON
+                PORTA = 0x80;       //  initiate with LED7 ON
            else
-                PORTA = 0x1;
+                PORTA = 0x1;        //  otherwise, initiate with LED0 ON
        }
+        
+        delay();                    //  delay between each iteration
+        make_sound();               
+        if (PORTDbits.RD15)         //  if SW3 is ON
+            PORTA >>= 1;            //  shift the LEDs to the RIGHT
+        else
+            PORTA <<= 1;            //  otherwise, shift to the LEFT
+        
     }
 }
 
+//      LEDs: 0010 0100                         LEDSs:  0010 0100                         
+//      AND   1111 0000                         AND     0000 1111
+//      RES:  0010 0000 shift << 1              RES:    0000 0100   shift >> 1
+//            0100 0000            <-OR->               0000 0010
+//                FINAL RESULT:   0100 0010
 void fan()
 {
-    PORTA = 0x18;
-    while(PORTFbits.RF4)
+//  while SW3 is ON
+//  if SW7 is ON -> BREAK
+    while(PORTFbits.RF4 && !PORTBbits.RB9)
     {
-        delay();
-        if (PORTDbits.RD15)
-            PORTA = (((PORTA & 0xf0) >> 1) & 0xf0) | (((PORTA & 0x0f) << 1) & 0x0f);
-        else
-            PORTA = ((PORTA & 0xf0) << 1) | ((PORTA & 0x0f) >> 1);
-        
-        if ((0xff & PORTA) == 0x0)
+        if ((0xff & PORTA) == 0x0)  //  if all the LEDs is OFF -> need to initiate them
         {
-            if (PORTDbits.RD15)
-                PORTA = 0X81;
+            if (PORTDbits.RD15)     //  if SW3 is turned ON
+                PORTA = 0X81;       //  initiate LEDs with  1000 0001
             else
-                PORTA = 0x18;
-        }                                                                           
-//        0010 0100             0001 1000       0001 1000   0000 0100               0001 000
-//        1111 0000 << 1        1111 0000       0000 1111   0010 0000               0001 0000
-//        0000 1111 >> 1        0010 0000       0000 0100   0010 0100               0001 1000
+                PORTA = 0x18;       //  otherwise, init as  0001 1000
+        }  
+        delay();                    //  delay between each iteration
+        make_sound();
+        
+        if (PORTDbits.RD15)         //  if SW3 is ON, shift the LEDs towards INSIDE
+        {   //  the 2nd & operator is to make sure only the 4 LEDs was shifted in each side
+            PORTA = (((PORTA & 0xf0) >> 1) & 0xf0) | (((PORTA & 0x0f) << 1) & 0x0f);
+        }
+        else                        //  otherwise, shift the LEDs towards the OUTSIDE
+            PORTA = ((PORTA & 0xf0) << 1) | ((PORTA & 0x0f) >> 1);                                                                                     
     }
 }
 
 void make_sound()
 {
+    //  if SW6 is OFF -> exit the function and do not make sound
     if (!PORTBbits.RB10) //SW6
         return;
     
-    int pitch = PORTDbits.RD14 ? 0 : 5;
     int i, num = 0; 
     while(num++ < 10)
     {
         PORTBbits.RB14--;
-        for(i = 0; i < 500 + pitch * 100; i++)
+        for(i = 0; i < 500 ; i++)   // delay between the two beeps
             ;
         PORTBbits.RB14++;
-        for(i = 0; i < 500 + pitch * 100; i++)
+        for(i = 0; i < 500; i++)   // delay between the two beeps
             ;
     }
+    
+    //  if either SW0, SW1 nor SW2 is ON, add delay
+    if (!(PORTFbits.RF3 || PORTFbits.RF5 || PORTFbits.RF4))
+        delay();
+        
 }
 
 void delay()
 {
     int interval = 80000;
-    if (!PORTDbits.RD14)
+    if (!PORTDbits.RD14)    //  if SW4 is OFF slower the speed
         interval = 120000;
     
     int j;
-    for (j = 0; j < interval; j++)
+    for (j = 0; j < interval; j++)  //  the actual delay
         ;
     
-    make_sound();
-    
-    while (PORTBbits.RB11)  //  while sw5 is on, stop the iteration
+    while (PORTBbits.RB11)  //  while SW5 is ON, pause the iteration
         ;
+}
+
+void reset_LEDs()
+{
+    PORTA = 0x0;
 }
 
 void init()
 {
-    TRISA &= 0xff00;
-    PORTA = 0x0;
+    TRISA &= 0xff00;        //  configure all the LEDs as output
      
     TRISFbits.TRISF3 = 1; // RF3 (SW0) configured as input
     TRISFbits.TRISF5 = 1; // RF5 (SW1) configured as input

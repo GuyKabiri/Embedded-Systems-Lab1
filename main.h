@@ -14,6 +14,7 @@
 
 void main();
 void init();
+void reset_LEDs();
 void counter();
 void delay();
 void shift();
