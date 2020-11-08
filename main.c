@@ -111,7 +111,7 @@ void make_sound()
             ;
     }
     
-    //  if either SW0, SW1 nor SW2 is ON, add delay
+    //  if neither SW0, SW1 nor SW2 is ON, add delay
     if (!(PORTFbits.RF3 || PORTFbits.RF5 || PORTFbits.RF4))
         delay();
         
