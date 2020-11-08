@@ -8,11 +8,11 @@ void main()
     {
         reset_LEDs();
         
-        if (PORTFbits.RF4)          //  if SW0 is ON
+        if (PORTFbits.RF4)          //  if SW2 is ON
             fan();
         else if (PORTFbits.RF5)     //  if SW1 is ON
            shift();
-        else if(PORTFbits.RF3)      //  if SW2 is ON
+        else if(PORTFbits.RF3)      //  if SW0 is ON
             counter();
         
         if(PORTBbits.RB9)           //  if SW7 is ON
