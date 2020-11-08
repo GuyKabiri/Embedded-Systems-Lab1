@@ -31,9 +31,9 @@ void counter()
     while(PORTFbits.RF3 && !PORTFbits.RF5 && !PORTFbits.RF4 && !PORTBbits.RB9)
     {
         if (PORTDbits.RD15)     //  if SW3 is ON
-            PORTA--;            //  count down
+            PORTA = (PORTA - 1) & 0xff;            //  count down
         else
-            PORTA++;            //  otherwise, count up
+            PORTA = (PORTA + 1) & 0xff;            //  otherwise, count up
         
         delay();                //  delay between each iteration
         make_sound();
@@ -42,7 +42,7 @@ void counter()
 
 void shift()
 {
-    //  if SW1 is ON and SW1 is OFF (if SW2 is ON -> break from this function)
+    //  if SW1 is ON and SW2 is OFF (if SW2 is ON -> break from this function)
     //  if SW7 is ON -> BREAK
     while (PORTFbits.RF5 && !PORTFbits.RF4 && !PORTBbits.RB9)
     {
@@ -71,7 +71,7 @@ void shift()
 //                FINAL RESULT:   0100 0010
 void fan()
 {
-//  while SW3 is ON
+//  while SW2 is ON
 //  if SW7 is ON -> BREAK
     while(PORTFbits.RF4 && !PORTBbits.RB9)
     {
